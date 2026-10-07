@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "build": "npx eas build --profile development --platform android",
     "build:local": "npx eas build --profile development --platform android --local",
-    "test": "node --experimental-strip-types --test src/diagnostics/devnetRpc.test.ts src/buildPath/modules.test.ts src/explainer/explainError.test.ts src/xp/progress.test.ts"
+    "test": "node --experimental-strip-types --test src/diagnostics/devnetRpc.test.ts src/diagnostics/sgt.test.ts src/buildPath/modules.test.ts src/explainer/explainError.test.ts src/xp/progress.test.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

@@ -93,15 +93,15 @@ const GUIDE_PANELS: Record<string, readonly GuidePanel[]> = {
   "06": [
     {
       title: "Why",
-      body: "CLOCK IN winners publish to the Solana dApp Store. You can submit on devnet first.",
+      body: "Winners publish on the Solana dApp Store. The identity check is yours. Sign up yourself at publish.solanamobile.com. While KYC says in review, you cannot upload an APK yet. Submit CLOCK IN on Radiants without waiting for that.",
     },
     {
       title: "Do this",
-      body: "Keep the release APK. Read publishing docs on docs.solanamobile.com. Listing can wait until after Oct 8.",
+      body: "Create the publisher account with your email. Read the Developer Agreement before you tick it. You must be 18+. Then submit KYC (person + government ID) or KYB (company). After approval: browser wallet with about 0.2 SOL, then the Submit a New App steps. Keep that wallet.",
     },
     {
       title: "Checkpoint",
-      body: "You know the publisher account you will use. Full guide: /m06\n\nScroll to the end, then Mark done.",
+      body: "The portal shows KYC or KYB submitted in your name. You still have the signed release APK. Full guide: clock-in.biboux.com/m06\n\nScroll to the end, then Mark done.",
     },
   ],
 };
