@@ -44,9 +44,9 @@ export const BUILD_MODULES: readonly BuildModule[] = [
   },
   {
     id: "06",
-    title: "dApp Store ready",
+    title: "Start your publisher KYC",
     detail:
-      "Winners must publish to the dApp Store, so get yours ready before results come out.",
+      "Create your own dApp Store account and submit KYC. The review wait is yours.",
   },
 ];
 

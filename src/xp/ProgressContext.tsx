@@ -29,6 +29,8 @@ type ProgressContextValue = {
   ready: boolean;
   completeGuide: (id: string) => void;
   setRpcVerified: (value: boolean) => void;
+  setTxVerified: (value: boolean) => void;
+  setSgtVerified: (value: boolean) => void;
 };
 
 const Context = createContext<ProgressContextValue>({
@@ -37,6 +39,8 @@ const Context = createContext<ProgressContextValue>({
   ready: false,
   completeGuide: () => {},
   setRpcVerified: () => {},
+  setTxVerified: () => {},
+  setSgtVerified: () => {},
 });
 
 async function loadProgress(): Promise<ProgressState> {
@@ -108,6 +112,20 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     [patch],
   );
 
+  const setTxVerified = useCallback(
+    (value: boolean) => {
+      patch((current) => ({ ...current, txVerified: value }));
+    },
+    [patch],
+  );
+
+  const setSgtVerified = useCallback(
+    (value: boolean) => {
+      patch((current) => ({ ...current, sgtVerified: value }));
+    },
+    [patch],
+  );
+
   useEffect(() => {
     if (!selectedAccount) return;
     patch((current) =>
@@ -123,8 +141,16 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   }, [ready, selectedAccount, xp]);
 
   const value = useMemo(
-    () => ({ progress, xp, ready, completeGuide, setRpcVerified }),
-    [progress, xp, ready, completeGuide, setRpcVerified],
+    () => ({
+      progress,
+      xp,
+      ready,
+      completeGuide,
+      setRpcVerified,
+      setTxVerified,
+      setSgtVerified,
+    }),
+    [progress, xp, ready, completeGuide, setRpcVerified, setTxVerified, setSgtVerified],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
