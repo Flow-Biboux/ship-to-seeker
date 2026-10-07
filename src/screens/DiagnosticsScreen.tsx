@@ -20,7 +20,7 @@ import { useAuthorization } from "../utils/useAuthorization";
 import { useMobileWallet } from "../utils/useMobileWallet";
 import { useProgress } from "../xp/ProgressContext";
 
-type Status = "idle" | "checking" | "pass" | "fail";
+type Status = "idle" | "checking" | "pass" | "fail" | "absent";
 
 const SCREEN_PADDING = 16;
 const CARD_GAP = 12;
@@ -33,9 +33,27 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function StatusChip({ status, pass, fail }: { status: Status; pass: string; fail: string }) {
+function StatusChip({
+  status,
+  pass,
+  fail,
+  absent = "Not on this wallet",
+}: {
+  status: Status;
+  pass: string;
+  fail: string;
+  absent?: string;
+}) {
   const label =
-    status === "checking" ? "Checking" : status === "pass" ? pass : status === "fail" ? fail : "Not run";
+    status === "checking"
+      ? "Checking"
+      : status === "pass"
+        ? pass
+        : status === "fail"
+          ? fail
+          : status === "absent"
+            ? absent
+            : "Not run";
   const color = status === "pass" ? CHIP_PASS : status === "fail" ? CHIP_FAIL : CHIP_NEUTRAL;
   return (
     <Chip style={[styles.chip, { backgroundColor: color }]} textStyle={styles.chipText}>
@@ -47,7 +65,7 @@ function StatusChip({ status, pass, fail }: { status: Status; pass: string; fail
 export function DiagnosticsScreen() {
   const { setRpcVerified, setTxVerified, setSgtVerified } = useProgress();
   const { selectedAccount } = useAuthorization();
-  const { connect, signAndSendTransaction } = useMobileWallet();
+  const { connect, disconnect, signAndSendTransaction } = useMobileWallet();
   const { connection } = useConnection();
 
   const [rpcAttempt, setRpcAttempt] = useState(0);
@@ -110,6 +128,18 @@ export function DiagnosticsScreen() {
     }
   }, [connect]);
 
+  const disconnectWallet = useCallback(async () => {
+    setWallet("checking");
+    setWalletHint(null);
+    try {
+      await disconnect();
+      setWallet("idle");
+    } catch (error: unknown) {
+      setWallet(selectedAccount ? "pass" : "fail");
+      setWalletHint(`The wallet didn't disconnect: ${errorText(error)}.`);
+    }
+  }, [disconnect, selectedAccount]);
+
   const runTx = useCallback(async () => {
     if (!selectedAccount) return;
     setTx("checking");
@@ -162,9 +192,9 @@ export function DiagnosticsScreen() {
         setSgtHint(`Seeker Genesis Token ${ellipsify(mint, 4)} found.`);
         setSgtVerified(true);
       } else {
-        setSgt("fail");
+        setSgt("absent");
         setSgtHint(
-          "No Seeker Genesis Token on this wallet. It lives in the primary account of the Seed Vault Wallet on a Seeker.",
+          "No Seeker Genesis Token on this wallet. It sits in the Seed Vault primary account.",
         );
         setSgtVerified(false);
       }
@@ -221,12 +251,13 @@ export function DiagnosticsScreen() {
           <Button
             mode="contained-tonal"
             onPress={() => {
-              connectWallet().catch((e: unknown) => console.warn("Connect failed", e));
+              const action = selectedAccount ? disconnectWallet() : connectWallet();
+              action.catch((e: unknown) => console.warn("Wallet action failed", e));
             }}
             loading={wallet === "checking"}
             disabled={wallet === "checking"}
           >
-            {selectedAccount ? "Reconnect" : "Connect"}
+            {selectedAccount ? "Disconnect" : "Connect"}
           </Button>
         </Card.Actions>
       </Card>
@@ -269,7 +300,7 @@ export function DiagnosticsScreen() {
       <Card mode="outlined">
         <Card.Title title="Seeker Genesis Token" subtitle="Mainnet read for the connected wallet" />
         <Card.Content>
-          <StatusChip status={sgt} pass="Verified" fail="Not found" />
+          <StatusChip status={sgt} pass="Verified" fail="Couldn't check" absent="Not on this wallet" />
           {!selectedAccount ? (
             <Text variant="bodyMedium" style={styles.hint}>
               Connect a wallet first.
