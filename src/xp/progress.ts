@@ -1,4 +1,4 @@
-import { BUILD_MODULES } from "../buildPath/modules";
+const KNOWN_GUIDE_IDS = ["00", "01", "02", "03", "04", "05", "06"] as const;
 
 export const XP_GUIDE = 10;
 export const XP_RPC = 20;
@@ -31,9 +31,8 @@ export const EMPTY_PROGRESS: ProgressState = {
 };
 
 export function computeXp(state: ProgressState): number {
-  const guides = state.completedGuideIds.filter((id) =>
-    BUILD_MODULES.some((module) => module.id === id),
-  );
+  const known = new Set<string>(KNOWN_GUIDE_IDS);
+  const guides = state.completedGuideIds.filter((id) => known.has(id));
   const unique = [...new Set(guides)];
   let xp = unique.length * XP_GUIDE;
   if (state.rpcVerified) xp += XP_RPC;
@@ -50,7 +49,7 @@ export function levelForXp(xp: number): {
   intoLevel: number;
   span: number;
 } {
-  let current = LEVELS[0];
+  let current: (typeof LEVELS)[number] = LEVELS[0];
   for (const level of LEVELS) {
     if (xp >= level.min) current = level;
   }
@@ -73,7 +72,7 @@ export function parseProgress(raw: string | null): ProgressState {
       : Array.isArray(parsed.completed)
         ? parsed.completed
         : [];
-    const known = new Set(BUILD_MODULES.map((module) => module.id));
+    const known = new Set<string>(KNOWN_GUIDE_IDS);
     return {
       completedGuideIds: ids.filter(
         (id): id is string => typeof id === "string" && known.has(id),

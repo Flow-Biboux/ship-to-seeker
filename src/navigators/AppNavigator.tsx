@@ -11,6 +11,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { useColorScheme } from "react-native";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { GuideReaderScreen } from "../screens/GuideReaderScreen";
 import { HomeNavigator } from "./HomeNavigator";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -35,6 +36,7 @@ import {
 type RootStackParamList = {
   HomeStack: undefined;
   Settings: undefined;
+  Guide: { moduleId: string };
 };
 
 declare global {
@@ -54,6 +56,7 @@ const AppStack = () => {
     >
       <Stack.Screen name="HomeStack" component={HomeNavigator} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Guide" component={GuideReaderScreen} />
     </Stack.Navigator>
   );
 };

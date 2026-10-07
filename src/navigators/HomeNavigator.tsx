@@ -4,16 +4,19 @@ import Feather from "@expo/vector-icons/Feather";
 import { BuildPathScreen } from "../screens/BuildPathScreen";
 import { DiagnosticsScreen } from "../screens/DiagnosticsScreen";
 import { ExplainerScreen } from "../screens/ExplainerScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 
-type TabName = "Diagnostics" | "Build Path" | "Explainer";
+type TabName = "Diagnostics" | "Build Path" | "Explainer" | "Profile";
 
-const TAB_ICONS: Record<TabName, React.ComponentProps<typeof Feather>["name"]> = {
-  Diagnostics: "activity",
-  "Build Path": "list",
-  Explainer: "message-circle",
-};
+const TAB_ICONS: Record<TabName, React.ComponentProps<typeof Feather>["name"]> =
+  {
+    Diagnostics: "activity",
+    "Build Path": "list",
+    Explainer: "message-circle",
+    Profile: "user",
+  };
 
 export function HomeNavigator() {
   return (
@@ -32,6 +35,7 @@ export function HomeNavigator() {
       <Tab.Screen name="Diagnostics" component={DiagnosticsScreen} />
       <Tab.Screen name="Build Path" component={BuildPathScreen} />
       <Tab.Screen name="Explainer" component={ExplainerScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }

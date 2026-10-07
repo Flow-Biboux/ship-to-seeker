@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Chip, List, ProgressBar, Text } from "react-native-paper";
@@ -12,8 +13,15 @@ const SCREEN_PADDING = 16;
 const CHECK_SIZE = 24;
 const CHECK_BORDER = 2;
 
+type BuildTabs = {
+  Diagnostics: undefined;
+  "Build Path": undefined;
+  Explainer: undefined;
+  Profile: undefined;
+};
+
 export function BuildPathScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<BottomTabNavigationProp<BuildTabs>>();
   const { progress, xp, ready } = useProgress();
   const level = levelForXp(xp);
   const ratio = level.span <= 0 ? 1 : level.intoLevel / level.span;
@@ -21,7 +29,7 @@ export function BuildPathScreen() {
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Pressable
-        onPress={() => navigation.navigate("HomeStack", { screen: "Profile" })}
+        onPress={() => navigation.navigate("Profile")}
       >
         <Chip compact>{level.name}</Chip>
         <ProgressBar progress={ratio} style={styles.bar} />
@@ -42,7 +50,7 @@ export function BuildPathScreen() {
             description={module.detail}
             descriptionNumberOfLines={4}
             onPress={() =>
-              navigation.navigate("Guide", { moduleId: module.id })
+              navigation.getParent()?.navigate("Guide", { moduleId: module.id })
             }
             left={() => (
               <View style={styles.check}>

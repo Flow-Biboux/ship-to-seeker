@@ -7,6 +7,7 @@ import {
   checkDevnetRpcHealth,
   type DevnetRpcChip,
 } from "../diagnostics/devnetRpc";
+import { useProgress } from "../xp/ProgressContext";
 
 type CheckState = "checking" | DevnetRpcChip;
 
@@ -17,6 +18,7 @@ const CHIP_CHECKING = "#5C6570";
 const CHIP_LABEL = "#FFFFFF";
 
 export function DiagnosticsScreen() {
+  const { setRpcVerified } = useProgress();
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<CheckState>("checking");
 
@@ -28,12 +30,14 @@ export function DiagnosticsScreen() {
       .then((next) => {
         if (!cancelled) {
           setStatus(next);
+          setRpcVerified(next === "connected");
         }
       })
       .catch((error: unknown) => {
         console.warn("Devnet RPC check did not settle", error);
         if (!cancelled) {
           setStatus("unreachable");
+          setRpcVerified(false);
         }
       });
 
