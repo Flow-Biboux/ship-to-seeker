@@ -48,9 +48,9 @@ export function SignInButton() {
       }
       setSignInInProgress(true);
       await signIn({
-        domain: "yourdomain.com",
-        statement: "Sign into Expo Template App",
-        uri: "https://yourdomain.com",
+        domain: "clock-in.biboux.com",
+        statement: "Sign into Ship to Seeker",
+        uri: "https://clock-in.biboux.com",
       });
     } catch (err: any) {
       alertAndLog(
