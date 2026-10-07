@@ -69,6 +69,17 @@ export function parseCompletedIds(raw: string | null): string[] {
   );
 }
 
+/** Adds an id after every guide panel has been seen. Does not remove ids. */
+export function markModuleCompleted(
+  completed: readonly string[],
+  id: string,
+): string[] {
+  if (completed.includes(id)) {
+    return [...completed];
+  }
+  return [...completed, id];
+}
+
 export function toggleCompletedId(completed: readonly string[], id: string): string[] {
   if (completed.includes(id)) {
     return completed.filter((item) => item !== id);

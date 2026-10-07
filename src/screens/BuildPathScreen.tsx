@@ -1,81 +1,79 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { Checkbox, List, Text } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
+import React from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Button, Chip, List, ProgressBar, Text } from "react-native-paper";
 import { ScreenIntro } from "../components/ScreenIntro";
-import {
-  BUILD_MODULES,
-  BUILD_PATH_STORAGE_KEY,
-  parseCompletedIds,
-  toggleCompletedId,
-} from "../buildPath/modules";
+import { BUILD_MODULES } from "../buildPath/modules";
+import { Linking } from "react-native";
+import { levelForXp } from "../xp/progress";
+import { useProgress } from "../xp/ProgressContext";
 
 const SCREEN_PADDING = 16;
+const CHECK_SIZE = 24;
+const CHECK_BORDER = 2;
 
 export function BuildPathScreen() {
-  const [completed, setCompleted] = useState<string[]>([]);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(BUILD_PATH_STORAGE_KEY)
-      .then((raw) => {
-        if (!cancelled) {
-          setCompleted(parseCompletedIds(raw));
-          setReady(true);
-        }
-      })
-      .catch((error: unknown) => {
-        console.warn("Build path checklist did not load", error);
-        if (!cancelled) {
-          setReady(true);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const toggle = useCallback((id: string) => {
-    setCompleted((current) => {
-      const next = toggleCompletedId(current, id);
-      AsyncStorage.setItem(BUILD_PATH_STORAGE_KEY, JSON.stringify(next)).catch(
-        (error: unknown) => {
-          console.warn("Build path checklist did not save", error);
-        },
-      );
-      return next;
-    });
-  }, []);
+  const navigation = useNavigation();
+  const { progress, xp, ready } = useProgress();
+  const level = levelForXp(xp);
+  const ratio = level.span <= 0 ? 1 : level.intoLevel / level.span;
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <Pressable
+        onPress={() => navigation.navigate("HomeStack", { screen: "Profile" })}
+      >
+        <Chip compact>{level.name}</Chip>
+        <ProgressBar progress={ratio} style={styles.bar} />
+        <Text variant="bodySmall" style={styles.xp}>
+          {xp} XP
+        </Text>
+      </Pressable>
       <ScreenIntro
         title="Build Path"
-        subtitle="Modules 00–06, same list as clock-in.biboux.com"
+        subtitle="Open a module. Mark done only after all 3 panels."
       />
-      {BUILD_MODULES.map((module) => (
-        <List.Item
-          key={module.id}
-          title={`${module.id} · ${module.title}`}
-          description={module.detail}
-          descriptionNumberOfLines={4}
-          onPress={() => toggle(module.id)}
-          left={() => (
-            <View style={styles.check}>
-              <Checkbox
-                status={
-                  completed.includes(module.id) ? "checked" : "unchecked"
-                }
-                disabled={!ready}
-                onPress={() => toggle(module.id)}
-              />
-            </View>
-          )}
-        />
-      ))}
+      {BUILD_MODULES.map((module) => {
+        const done = progress.completedGuideIds.includes(module.id);
+        return (
+          <List.Item
+            key={module.id}
+            title={`${module.id} · ${module.title}`}
+            description={module.detail}
+            descriptionNumberOfLines={4}
+            onPress={() =>
+              navigation.navigate("Guide", { moduleId: module.id })
+            }
+            left={() => (
+              <View style={styles.check}>
+                <View
+                  style={[
+                    styles.tick,
+                    { opacity: done ? 1 : 0.35 },
+                  ]}
+                >
+                  {done ? <Text>✓</Text> : null}
+                </View>
+              </View>
+            )}
+          />
+        );
+      })}
+      <Button
+        mode="outlined"
+        onPress={() => {
+          Linking.openURL("https://clock-in.biboux.com/bonus").catch(
+            (error: unknown) => {
+              console.warn("Could not open submission guide", error);
+            },
+          );
+        }}
+      >
+        Submission guide
+      </Button>
       <Text variant="bodySmall" style={styles.progress}>
-        {completed.length} of {BUILD_MODULES.length} checked on this phone
+        {progress.completedGuideIds.length} of {BUILD_MODULES.length} guides
+        done{ready ? "" : " …"}
       </Text>
     </ScrollView>
   );
@@ -86,7 +84,16 @@ const styles = StyleSheet.create({
     padding: SCREEN_PADDING,
     paddingBottom: 32,
   },
+  bar: { marginTop: 8, marginBottom: 4 },
+  xp: { marginBottom: 12 },
   check: {
+    justifyContent: "center",
+  },
+  tick: {
+    width: CHECK_SIZE,
+    height: CHECK_SIZE,
+    borderWidth: CHECK_BORDER,
+    alignItems: "center",
     justifyContent: "center",
   },
   progress: {
