@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { canMarkModuleDone, panelHasCode, panelsForModule } from "./guidePanels.ts";
 import {
   BUILD_MODULES,
+  markModuleCompleted,
   parseCompletedIds,
   toggleCompletedId,
 } from "./modules.ts";
@@ -23,6 +25,50 @@ describe("toggleCompletedId", () => {
     const added = toggleCompletedId([], "01");
     assert.deepEqual(added, ["01"]);
     assert.deepEqual(toggleCompletedId(added, "01"), []);
+  });
+});
+
+describe("guide panels", () => {
+  it("keeps commands in code blocks, not in the prose", () => {
+    assert.equal(panelsForModule("00").map((panel) => panel.title).length, 6);
+    assert.deepEqual(
+      panelsForModule("00").map((panel) => panel.title),
+      [
+        "What you need",
+        "Generate the app",
+        "Don't use Expo Go",
+        "Get a wallet on the device",
+        "Checkpoint",
+        "Common breakages",
+      ],
+    );
+    for (const module of BUILD_MODULES) {
+      const panels = panelsForModule(module.id);
+      assert.ok(panels.length >= 5, module.id);
+      assert.ok(
+        panels.some((panel) => panelHasCode(panel)),
+        `${module.id} has no code block`,
+      );
+    }
+    const generate = panelsForModule("00")[1];
+    assert.equal(generate?.blocks.some((block) => block.kind === "code"), true);
+    assert.equal(
+      generate?.blocks.some(
+        (block) => block.kind === "text" && block.text.includes("npm create"),
+      ),
+      false,
+    );
+    assert.equal(canMarkModuleDone(5, 6), false);
+    assert.equal(canMarkModuleDone(6, 6), true);
+    const kyc = panelsForModule("06").map((panel) => panel.title);
+    assert.ok(kyc.includes("Submit KYC or KYB"));
+  });
+});
+
+describe("markModuleCompleted", () => {
+  it("adds an id once", () => {
+    assert.deepEqual(markModuleCompleted(["00"], "00"), ["00"]);
+    assert.deepEqual(markModuleCompleted(["00"], "01"), ["00", "01"]);
   });
 });
 
