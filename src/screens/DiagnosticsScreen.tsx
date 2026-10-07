@@ -10,8 +10,10 @@ import {
 import {
   DEVNET_FAUCET_URL,
   ensureDevnetBalance,
+  devnetTxFailureHint,
   explorerTxUrl,
   sendSelfTransfer,
+  SignatureNeverLandedError,
 } from "../diagnostics/devnetTx";
 import { findSgtMint } from "../diagnostics/sgt";
 import { useConnection } from "../utils/ConnectionProvider";
@@ -169,15 +171,10 @@ export function DiagnosticsScreen() {
       const message = errorText(error);
       setTx("fail");
       setTxVerified(false);
-      setTxHint(
-        /blockhash/i.test(message)
-          ? "The transaction expired before it was signed. Approve it faster in the wallet, then retry."
-          : /insufficient|0x1\b/i.test(message)
-            ? "Not enough devnet SOL. Use the faucet, then retry."
-            : /declin|reject|cancel/i.test(message)
-              ? "The transaction was declined in the wallet. Retry and approve it."
-              : `The transaction failed: ${message}`,
-      );
+      if (error instanceof SignatureNeverLandedError) {
+        setTxSignature(error.signature);
+      }
+      setTxHint(devnetTxFailureHint(message));
     }
   }, [connection, selectedAccount, signAndSendTransaction]);
 

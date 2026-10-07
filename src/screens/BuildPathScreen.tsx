@@ -39,7 +39,7 @@ export function BuildPathScreen() {
       </Pressable>
       <ScreenIntro
         title="Build Path"
-        subtitle="Open a module. Mark done only after all 3 panels."
+        subtitle="Open a module. Mark done only after Next reaches the last panel."
       />
       {BUILD_MODULES.map((module) => {
         const done = progress.completedGuideIds.includes(module.id);

@@ -9,29 +9,21 @@ import {
   XP_RPC,
   XP_WALLET,
 } from "./progress.ts";
-import { canMarkDone, GUIDE_PANEL_COUNT, panelsForModule } from "../buildPath/guidePanels.ts";
+import { canMarkModuleDone, panelHasCode, panelsForModule } from "../buildPath/guidePanels.ts";
 import { BUILD_MODULES, markModuleCompleted } from "../buildPath/modules.ts";
 
 describe("guide panels", () => {
-  it("is exactly 3 panels per module", () => {
+  it("gives every module course panels and a code block", () => {
     for (const module of BUILD_MODULES) {
-      assert.equal(panelsForModule(module.id).length, GUIDE_PANEL_COUNT);
+      const panels = panelsForModule(module.id);
+      assert.ok(panels.length >= 5, module.id);
+      assert.ok(
+        panels.some((panel) => panelHasCode(panel)),
+        `${module.id} has no code block`,
+      );
     }
-  });
-
-  it("enables mark done only on last page after scroll end", () => {
-    assert.equal(
-      canMarkDone({ pageIndex: 1, lastPanelScrolledToEnd: true }),
-      false,
-    );
-    assert.equal(
-      canMarkDone({ pageIndex: 2, lastPanelScrolledToEnd: false }),
-      false,
-    );
-    assert.equal(
-      canMarkDone({ pageIndex: 2, lastPanelScrolledToEnd: true }),
-      true,
-    );
+    assert.equal(canMarkModuleDone(5, 6), false);
+    assert.equal(canMarkModuleDone(6, 6), true);
   });
 });
 
