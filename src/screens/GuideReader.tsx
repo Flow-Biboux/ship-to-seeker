@@ -1,3 +1,4 @@
+import * as Clipboard from "expo-clipboard";
 import React, { useRef, useState } from "react";
 import {
   Linking,
@@ -12,6 +13,7 @@ import {
   canMarkModuleDone,
   moduleWebPath,
   panelsForModule,
+  splitGuideText,
   type GuideBlock,
 } from "../buildPath/guidePanels";
 import type { BuildModule } from "../buildPath/modules";
@@ -161,6 +163,8 @@ export function GuideReader({
   );
 }
 
+const COPIED_VISIBLE_MS = 1500;
+
 function GuideBlockView({
   block,
   color,
@@ -173,19 +177,92 @@ function GuideBlockView({
   borderColor: string;
 }) {
   if (block.kind === "text") {
-    return <Text variant="bodyLarge">{block.text}</Text>;
+    return <GuideProse text={block.text} />;
   }
   return (
-    <ScrollView
-      horizontal
-      nestedScrollEnabled
+    <CodeBlock
+      code={block.code}
+      color={color}
+      backgroundColor={backgroundColor}
+      borderColor={borderColor}
+    />
+  );
+}
+
+function GuideProse({ text }: { text: string }) {
+  const parts = splitGuideText(text);
+  return (
+    <Text variant="bodyLarge">
+      {parts.map((part, index) =>
+        part.kind === "plain" ? (
+          <Text key={index} variant="bodyLarge">
+            {part.text}
+          </Text>
+        ) : (
+          <Text
+            key={index}
+            variant="bodyLarge"
+            style={styles.link}
+            onPress={() => {
+              Linking.openURL(part.url).catch((error: unknown) => {
+                console.warn("Could not open guide link", error);
+              });
+            }}
+          >
+            {part.text}
+          </Text>
+        ),
+      )}
+    </Text>
+  );
+}
+
+function CodeBlock({
+  code,
+  color,
+  backgroundColor,
+  borderColor,
+}: {
+  code: string;
+  color: string;
+  backgroundColor: string;
+  borderColor: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  function copyCode() {
+    Clipboard.setStringAsync(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), COPIED_VISIBLE_MS);
+      })
+      .catch((error: unknown) => {
+        console.warn("Could not copy guide code", error);
+      });
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Copy code"
+      onPress={copyCode}
       style={[styles.codeWrap, { backgroundColor, borderColor }]}
-      contentContainerStyle={styles.codeInner}
     >
-      <Text selectable style={[styles.code, { color }]}>
-        {block.code}
-      </Text>
-    </ScrollView>
+      <ScrollView
+        horizontal
+        nestedScrollEnabled
+        contentContainerStyle={styles.codeInner}
+      >
+        <Text onPress={copyCode} style={[styles.code, { color }]}>
+          {code}
+        </Text>
+      </ScrollView>
+      {copied ? (
+        <Text variant="labelMedium" style={[styles.copied, { color }]}>
+          Copied
+        </Text>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -221,6 +298,14 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     fontSize: 13,
     lineHeight: 20,
+  },
+  copied: {
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+  },
+  link: {
+    color: TITLE_PURPLE,
+    textDecorationLine: "underline",
   },
   dots: {
     flexDirection: "row",

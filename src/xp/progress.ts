@@ -61,6 +61,40 @@ export function levelForXp(xp: number): {
   return { name: current.name, min: current.min, nextMin, intoLevel, span };
 }
 
+export const DIAGNOSTIC_CHECKS = [
+  { key: "rpcVerified", label: "Devnet RPC" },
+  { key: "walletVerified", label: "Wallet" },
+  { key: "txVerified", label: "Devnet transaction" },
+  { key: "sgtVerified", label: "Seeker Genesis Token" },
+] as const satisfies readonly { key: keyof ProgressState; label: string }[];
+
+export type ProgressSummary = {
+  modulesDone: number;
+  modulesTotal: number;
+  checksDone: number;
+  checksTotal: number;
+  meaning: string;
+};
+
+export function summarizeProgress(state: ProgressState): ProgressSummary {
+  const doneGuides = new Set(
+    state.completedGuideIds.filter((id) =>
+      (KNOWN_GUIDE_IDS as readonly string[]).includes(id),
+    ),
+  );
+  const modulesDone = doneGuides.size;
+  const modulesTotal = KNOWN_GUIDE_IDS.length;
+  const checksDone = DIAGNOSTIC_CHECKS.filter((check) => state[check.key] === true).length;
+  const checksTotal = DIAGNOSTIC_CHECKS.length;
+  return {
+    modulesDone,
+    modulesTotal,
+    checksDone,
+    checksTotal,
+    meaning: `${modulesDone} of ${modulesTotal} modules finished. ${checksDone} of ${checksTotal} checks verified.`,
+  };
+}
+
 export function parseProgress(raw: string | null): ProgressState {
   if (raw == null || raw.length === 0) return { ...EMPTY_PROGRESS };
   try {

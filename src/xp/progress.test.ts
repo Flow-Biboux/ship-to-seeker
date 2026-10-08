@@ -5,6 +5,7 @@ import {
   computeXp,
   levelForXp,
   parseProgress,
+  summarizeProgress,
   XP_GUIDE,
   XP_RPC,
   XP_WALLET,
@@ -66,6 +67,25 @@ describe("markModuleCompleted", () => {
   it("adds an id once", () => {
     assert.deepEqual(markModuleCompleted(["00"], "00"), ["00"]);
     assert.deepEqual(markModuleCompleted(["00"], "01"), ["00", "01"]);
+  });
+});
+
+describe("summarizeProgress", () => {
+  it("counts finished modules and verified checks", () => {
+    const summary = summarizeProgress({
+      ...EMPTY_PROGRESS,
+      completedGuideIds: ["00", "00", "02", "99"],
+      rpcVerified: true,
+      walletVerified: true,
+    });
+    assert.equal(summary.modulesDone, 2);
+    assert.equal(summary.modulesTotal, 7);
+    assert.equal(summary.checksDone, 2);
+    assert.equal(summary.checksTotal, 4);
+    assert.equal(
+      summary.meaning,
+      "2 of 7 modules finished. 2 of 4 checks verified.",
+    );
   });
 });
 

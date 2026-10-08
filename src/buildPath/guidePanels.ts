@@ -328,3 +328,44 @@ export function moduleWebPath(moduleId: string): string {
   if (moduleId === "00") return "/start";
   return `/m${moduleId}`;
 }
+
+export type GuideTextPart =
+  | { kind: "plain"; text: string }
+  | { kind: "link"; text: string; url: string };
+
+const GUIDE_URL =
+  /https?:\/\/[^\s<>"']+|(?<!@)\b(?:[a-zA-Z0-9-]+\.)+(?:com|dev|io|org|nexus)(?:\/[^\s<>"']*)?/g;
+
+const TRAILING_URL_PUNCTUATION = /[.,);:]+$/;
+const EMAIL_PREFIX = /@[a-zA-Z0-9.-]*$/;
+
+function isInsideEmail(text: string, start: number): boolean {
+  return EMAIL_PREFIX.test(text.slice(0, start));
+}
+
+/** Split guide prose into plain text and tappable http(s) or bare-host links. */
+export function splitGuideText(text: string): readonly GuideTextPart[] {
+  const parts: GuideTextPart[] = [];
+  let cursor = 0;
+  for (const match of text.matchAll(GUIDE_URL)) {
+    const start = match.index ?? 0;
+    const raw = match[0];
+    const trimmed = raw.replace(TRAILING_URL_PUNCTUATION, "");
+    if (trimmed.length === 0 || isInsideEmail(text, start)) continue;
+    if (start > cursor) {
+      parts.push({ kind: "plain", text: text.slice(cursor, start) });
+    }
+    parts.push({ kind: "link", text: trimmed, url: guideLinkUrl(trimmed) });
+    const consumed = start + trimmed.length;
+    cursor = consumed;
+  }
+  if (cursor < text.length) {
+    parts.push({ kind: "plain", text: text.slice(cursor) });
+  }
+  return parts;
+}
+
+export function guideLinkUrl(raw: string): string {
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
