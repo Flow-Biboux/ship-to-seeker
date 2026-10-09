@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Linking, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, ProgressBar, Text, TextInput } from "react-native-paper";
 import { ScreenIntro } from "../components/ScreenIntro";
 import { BUILD_MODULES } from "../buildPath/modules";
@@ -21,6 +21,8 @@ import { DIAGNOSTIC_CHECKS, levelForXp, summarizeProgress } from "../xp/progress
 import { useProgress } from "../xp/ProgressContext";
 
 const SCREEN_PADDING = 16;
+const TERMS_URL = "https://clock-in.biboux.com/terms";
+const PRIVACY_URL = "https://clock-in.biboux.com/privacy";
 const CARD_GAP = 12;
 const ACCENT = "#9945ff";
 const DONE = "#00ffbd";
@@ -279,6 +281,17 @@ export function ProfileScreen() {
             : null}
         </Card.Content>
       </Card>
+      <Card mode="outlined" style={styles.card}>
+        <Card.Title title="Legal" />
+        <Card.Content style={styles.links}>
+          <Button mode="outlined" onPress={() => Linking.openURL(TERMS_URL)}>
+            Terms of Use
+          </Button>
+          <Button mode="outlined" onPress={() => Linking.openURL(PRIVACY_URL)}>
+            Privacy Policy
+          </Button>
+        </Card.Content>
+      </Card>
     </ScrollView>
   );
 }
@@ -294,4 +307,5 @@ const styles = StyleSheet.create({
   mark: { width: 44, fontWeight: "700" },
   packetMark: { width: 78, fontWeight: "700" },
   rowLabel: { flex: 1 },
+  links: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 });
