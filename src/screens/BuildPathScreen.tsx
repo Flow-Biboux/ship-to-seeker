@@ -1,10 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Chip, List, ProgressBar, Text } from "react-native-paper";
 import { ScreenIntro } from "../components/ScreenIntro";
-import { BUILD_MODULES } from "../buildPath/modules";
+import { BUILD_MODULES, SKR_MODULES } from "../buildPath/modules";
+import { fetchSkrBalance, formatSkr } from "../skr/skr";
+import { useAuthorization } from "../utils/useAuthorization";
 import { Linking } from "react-native";
 import { levelForXp } from "../xp/progress";
 import { useProgress } from "../xp/ProgressContext";
@@ -25,6 +27,43 @@ export function BuildPathScreen() {
   const { progress, xp, ready } = useProgress();
   const level = levelForXp(xp);
   const ratio = level.span <= 0 ? 1 : level.intoLevel / level.span;
+  const { selectedAccount } = useAuthorization();
+  const owner = selectedAccount?.publicKey.toBase58() ?? null;
+  const [skr, setSkr] = useState<
+    { state: "idle" | "checking" | "error" } | { state: "done"; raw: bigint }
+  >({ state: "idle" });
+  const unlocked = skr.state === "done" && skr.raw > 0n;
+
+  useEffect(() => {
+    if (owner == null) {
+      setSkr({ state: "idle" });
+      return;
+    }
+    let cancelled = false;
+    setSkr({ state: "checking" });
+    fetchSkrBalance(owner)
+      .then((raw) => {
+        if (!cancelled) setSkr({ state: "done", raw });
+      })
+      .catch((error: unknown) => {
+        console.warn("SKR balance check failed", error);
+        if (!cancelled) setSkr({ state: "error" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [owner]);
+
+  const skrStatus =
+    owner == null
+      ? "Connect your wallet in Diagnostics to check your SKR."
+      : skr.state === "checking"
+        ? "Checking your SKR on mainnet…"
+        : skr.state === "error"
+          ? "Could not reach mainnet to check SKR. Try again later."
+          : unlocked && skr.state === "done"
+            ? `Unlocked: you hold ${formatSkr(skr.raw)} SKR.`
+            : "Hold any amount of SKR in this wallet to unlock these guides.";
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -67,6 +106,24 @@ export function BuildPathScreen() {
           />
         );
       })}
+      <Text variant="titleMedium" style={styles.skrTitle}>
+        {unlocked ? "🔓" : "🔒"} SKR holder guides
+      </Text>
+      <Text variant="bodySmall">{skrStatus}</Text>
+      {SKR_MODULES.map((module) => (
+        <List.Item
+          key={module.id}
+          title={`${module.id} · ${module.title}`}
+          description={module.detail}
+          descriptionNumberOfLines={4}
+          disabled={!unlocked}
+          style={{ opacity: unlocked ? 1 : 0.45 }}
+          onPress={() =>
+            navigation.getParent()?.navigate("Guide", { moduleId: module.id })
+          }
+          left={(props) => <List.Icon {...props} icon={unlocked ? "lock-open-variant" : "lock"} />}
+        />
+      ))}
       <Button
         mode="outlined"
         onPress={() => {
@@ -103,6 +160,10 @@ const styles = StyleSheet.create({
     borderWidth: CHECK_BORDER,
     alignItems: "center",
     justifyContent: "center",
+  },
+  skrTitle: {
+    marginTop: 16,
+    marginBottom: 4,
   },
   progress: {
     marginTop: 8,

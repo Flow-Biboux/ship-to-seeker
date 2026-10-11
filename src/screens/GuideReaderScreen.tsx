@@ -1,6 +1,6 @@
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import React from "react";
-import { BUILD_MODULES } from "../buildPath/modules";
+import { findModule } from "../buildPath/modules";
 import { useProgress } from "../xp/ProgressContext";
 import { GuideReader } from "./GuideReader";
 
@@ -10,7 +10,7 @@ export function GuideReaderScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<GuideParams, "Guide">>();
   const moduleId = route.params?.moduleId ?? "00";
-  const meta = BUILD_MODULES.find((module) => module.id === moduleId);
+  const meta = findModule(moduleId);
   const { completeGuide, progress } = useProgress();
   const alreadyDone = progress.completedGuideIds.includes(moduleId);
 
