@@ -42,3 +42,9 @@ Install on a Seeker or any Android phone: download the file, open it, and allow 
 [MIT](LICENSE).
 
 This project is an independent entry. It is not affiliated with Solana Mobile, Radiants, or the Solana Foundation.
+
+## Dependency audit
+
+- `tar` (critical) is overridden to 7.5.22, `postcss` to 8.5.29 and `@xmldom/xmldom` to 0.8.15 in `package.json` → `overrides`.
+- Remaining `npm audit` highs come from build tools (Expo CLI, Metro, Jest, React Native codegen). They run on the developer's machine and are not bundled into the APK. Fixing them needs an Expo SDK upgrade, planned after CLOCK IN.
+- `bigint-buffer` (via `@solana/spl-token`) has no patched release. The app does not call `toBigIntLE` on untrusted input.
