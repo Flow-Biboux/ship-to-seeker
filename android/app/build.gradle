@@ -108,13 +108,13 @@ android {
             keyPassword 'android'
         }
         release {
-            if (!keystorePropertiesFile.exists()) {
-                throw new GradleException("Missing android/keystore.properties for release signing")
+            // Only on a machine with android/keystore.properties; CI builds debug without it.
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
             }
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
         }
     }
     buildTypes {
