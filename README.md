@@ -27,6 +27,16 @@ npx expo start
 
 Scaffolded from the public [`@solana-mobile/solana-mobile-expo-template`](https://www.npmjs.com/package/@solana-mobile/solana-mobile-expo-template).
 
+## Release
+
+v1.0.0 is the signed Android APK, package `com.biboux.shiptoseeker`. The same file is in Solana dApp Store review.
+
+Download: [clock-in.biboux.com/apk-release](https://clock-in.biboux.com/apk-release)
+
+GitHub release: [v1.0.0](https://github.com/Flow-Biboux/ship-to-seeker/releases/tag/v1.0.0)
+
+Install on a Seeker or any Android phone: download the file, open it, and allow installs if Android asks.
+
 ## License
 
 [MIT](LICENSE).
