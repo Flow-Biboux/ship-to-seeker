@@ -42,3 +42,10 @@ Install on a Seeker or any Android phone: download the file, open it, and allow 
 [MIT](LICENSE).
 
 This project is an independent entry. It is not affiliated with Solana Mobile, Radiants, or the Solana Foundation.
+
+## Dependency audit
+
+- `tar` (critical) is overridden to 7.5.22, `postcss` to 8.5.29 and `@xmldom/xmldom` to 0.8.15 in `package.json` → `overrides`.
+- Remaining `npm audit` highs come from build tools (Expo CLI, Metro, Jest, React Native codegen). They run on the developer's machine and are not bundled into the APK. Fixing them needs an Expo SDK upgrade, planned after CLOCK IN.
+- `bigint-buffer` is removed: the app no longer depends on `@solana/spl-token` (the two program ids it used are inlined).
+- `image-size` (via Metro) only reads the app's own image assets at build time. Its fix is a major version Metro does not support yet.

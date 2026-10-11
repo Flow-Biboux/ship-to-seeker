@@ -9,7 +9,9 @@ import {
   TransactionSignature,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+// Program ids inlined so the app does not depend on @solana/spl-token (and its unpatched bigint-buffer).
+const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useConnection } from "../../utils/ConnectionProvider";
 import { useMobileWallet } from "../../utils/useMobileWallet";
