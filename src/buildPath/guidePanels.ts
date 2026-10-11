@@ -311,8 +311,57 @@ const GUIDE_PANELS: Record<string, readonly GuidePanel[]> = {
   ],
 };
 
+const SKR_GUIDE_PANELS: Record<string, readonly GuidePanel[]> = {
+  S1: [
+    {
+      title: "What SKR is, for your code",
+      blocks: [
+        { kind: "text", text: "SKR is a classic SPL token on mainnet with 6 decimals. Its mint address is in the Solana Mobile announcement: solanamobile.com/blog/skr-is-live" },
+        { kind: "code", code: "const SKR_MINT = \"SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3\";" },
+      ],
+    },
+    {
+      title: "One RPC call",
+      blocks: [
+        { kind: "text", text: "Ask mainnet for the wallet's token accounts, filtered by the SKR mint. jsonParsed gives you the amount as a string of base units." },
+        { kind: "code", code: "const { value } = await connection.getParsedTokenAccountsByOwner(\n  owner,\n  { mint: new PublicKey(SKR_MINT) },\n);\nconst raw = value.reduce(\n  (sum, a) => sum + BigInt(a.account.data.parsed.info.tokenAmount.amount),\n  0n,\n);" },
+      ],
+    },
+    {
+      title: "Gate a feature",
+      blocks: [
+        { kind: "text", text: "Divide by 10^6 for whole tokens. Any amount above zero can unlock something: extra content, a badge, higher limits. Check on mainnet even if the rest of your app runs on devnet." },
+        { kind: "code", code: "const holdsSkr = raw > 0n;" },
+        { kind: "text", text: "This is a read, so the wallet never signs anything. For anything valuable, verify on your server too: a client check can be bypassed." },
+      ],
+    },
+  ],
+  S2: [
+    {
+      title: "Fetch by signature",
+      blocks: [
+        { kind: "text", text: "Every send returns a signature. Use it to pull the full result, on the same cluster you sent to:" },
+        { kind: "code", code: "const tx = await connection.getTransaction(signature, {\n  commitment: \"confirmed\",\n  maxSupportedTransactionVersion: 0,\n});" },
+      ],
+    },
+    {
+      title: "Read the result",
+      blocks: [
+        { kind: "text", text: "• tx.meta.err is null on success.\n• tx.meta.logMessages shows each program call and where it failed.\n• preBalances and postBalances show who paid and what moved." },
+      ],
+    },
+    {
+      title: "Custom errors",
+      blocks: [
+        { kind: "text", text: "An error like { InstructionError: [0, { Custom: 1 }] } means instruction 0 returned the program's own error code 1. Look it up in that program's error list (for SPL Token, 1 is insufficient funds). Anchor programs start their own codes at 6000." },
+        { kind: "text", text: "Shortcut: paste the signature into the Explainer tab and it does this for you." },
+      ],
+    },
+  ],
+};
+
 export function panelsForModule(moduleId: string): readonly GuidePanel[] {
-  return GUIDE_PANELS[moduleId] ?? [];
+  return GUIDE_PANELS[moduleId] ?? SKR_GUIDE_PANELS[moduleId] ?? [];
 }
 
 export function panelHasCode(panel: GuidePanel): boolean {

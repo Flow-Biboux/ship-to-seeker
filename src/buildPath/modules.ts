@@ -50,6 +50,24 @@ export const BUILD_MODULES: readonly BuildModule[] = [
   },
 ];
 
+/** Extra guides unlocked by holding any SKR in the connected wallet (mainnet). */
+export const SKR_MODULES: readonly BuildModule[] = [
+  {
+    id: "S1",
+    title: "Read SKR in your own app",
+    detail: "Find a wallet's SKR balance with one RPC call and gate a feature on it.",
+  },
+  {
+    id: "S2",
+    title: "Debug any transaction from its logs",
+    detail: "Fetch a transaction by signature, read the error and program logs, decode custom errors.",
+  },
+];
+
+export function findModule(id: string): BuildModule | undefined {
+  return [...BUILD_MODULES, ...SKR_MODULES].find((module) => module.id === id);
+}
+
 export function parseCompletedIds(raw: string | null): string[] {
   if (raw == null || raw.length === 0) {
     return [];
