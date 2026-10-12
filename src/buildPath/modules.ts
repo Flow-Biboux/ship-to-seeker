@@ -48,6 +48,41 @@ export const BUILD_MODULES: readonly BuildModule[] = [
     detail:
       "Create your own dApp Store account and submit KYC. The review wait is yours.",
   },
+  {
+    id: "07",
+    title: "Wallet, key, seed phrase",
+    detail: "The wallet holds keys. The app never sees the seed phrase or the private key.",
+  },
+  {
+    id: "08",
+    title: "SOL, tokens, and NFTs",
+    detail: "Three different assets. SKR is the token. The Seeker Genesis Token is the NFT.",
+  },
+  {
+    id: "09",
+    title: "Read a transaction",
+    detail: "Status, fees, compute, logs, and the ways a transaction fails.",
+  },
+  {
+    id: "10",
+    title: "When you do not need a program",
+    detail: "RPC, wallet, and token reads stay in the app. A program is for shared on-chain state.",
+  },
+  {
+    id: "11",
+    title: "Token-2022 extensions",
+    detail: "Why a normal token balance check misses the Seeker Genesis Token.",
+  },
+  {
+    id: "12",
+    title: "A success that did nothing",
+    detail: "The transaction landed, and the thing you wanted still did not happen.",
+  },
+  {
+    id: "13",
+    title: "Listing assets",
+    detail: "The signed APK, What's New, icon, and screenshots the publisher portal asks for.",
+  },
 ];
 
 /** Extra guides unlocked by holding any SKR in the connected wallet (mainnet). */

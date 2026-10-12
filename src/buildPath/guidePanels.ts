@@ -1,6 +1,18 @@
+import { EXTRA_GUIDE_PANELS } from "./extraGuides.ts";
+
 export type GuideBlock =
   | { kind: "text"; text: string }
-  | { kind: "code"; code: string };
+  | { kind: "code"; code: string }
+  | { kind: "diagram"; diagram: DiagramName };
+
+export type DiagramName =
+  | "wallet"
+  | "assets"
+  | "transaction"
+  | "program"
+  | "token2022"
+  | "landed"
+  | "listing";
 
 export type GuidePanel = {
   title: string;
@@ -361,7 +373,7 @@ const SKR_GUIDE_PANELS: Record<string, readonly GuidePanel[]> = {
 };
 
 export function panelsForModule(moduleId: string): readonly GuidePanel[] {
-  return GUIDE_PANELS[moduleId] ?? SKR_GUIDE_PANELS[moduleId] ?? [];
+  return GUIDE_PANELS[moduleId] ?? SKR_GUIDE_PANELS[moduleId] ?? EXTRA_GUIDE_PANELS[moduleId] ?? [];
 }
 
 export function panelHasCode(panel: GuidePanel): boolean {
@@ -373,7 +385,10 @@ export function canMarkModuleDone(seenCount: number, panelCount: number): boolea
   return panelCount > 0 && seenCount >= panelCount;
 }
 
-export function moduleWebPath(moduleId: string): string {
+const WEB_GUIDE_IDS = new Set(["00", "01", "02", "03", "04", "05", "06"]);
+
+export function moduleWebPath(moduleId: string): string | null {
+  if (!WEB_GUIDE_IDS.has(moduleId)) return null;
   if (moduleId === "00") return "/start";
   return `/m${moduleId}`;
 }
