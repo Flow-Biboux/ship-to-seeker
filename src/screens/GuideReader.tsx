@@ -1,6 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import React, { useRef, useState } from "react";
 import {
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -14,8 +15,10 @@ import {
   moduleWebPath,
   panelsForModule,
   splitGuideText,
+  type DiagramName,
   type GuideBlock,
 } from "../buildPath/guidePanels";
+import { GUIDE_DIAGRAMS } from "../buildPath/extraGuides";
 import type { BuildModule } from "../buildPath/modules";
 
 export function GuideReader({
@@ -128,11 +131,13 @@ export function GuideReader({
           />
         ))}
       </View>
-      {onLast ? (
+      {onLast && moduleWebPath(module.id) != null ? (
         <Button
           mode="text"
           onPress={() => {
-            Linking.openURL(`${SITE}${moduleWebPath(module.id)}`).catch(
+            const path = moduleWebPath(module.id);
+            if (path == null) return;
+            Linking.openURL(`${SITE}${path}`).catch(
               (error: unknown) => {
                 console.warn("Could not open full guide", error);
               },
@@ -179,6 +184,9 @@ function GuideBlockView({
   if (block.kind === "text") {
     return <GuideProse text={block.text} />;
   }
+  if (block.kind === "diagram") {
+    return <GuideDiagram name={block.diagram} />;
+  }
   return (
     <CodeBlock
       code={block.code}
@@ -186,6 +194,32 @@ function GuideBlockView({
       backgroundColor={backgroundColor}
       borderColor={borderColor}
     />
+  );
+}
+
+function GuideDiagram({ name }: { name: DiagramName }) {
+  const rows = GUIDE_DIAGRAMS[name];
+  return (
+    <View style={styles.diagram}>
+      {name === "listing" ? (
+        <Image
+          source={require("../../screenshots/screenshot1.png")}
+          style={styles.shot}
+          accessibilityLabel="Ship to Seeker screen"
+        />
+      ) : null}
+      {rows.map((row) => (
+        <View key={row.join("|")} style={styles.diagramRow}>
+          {row.map((cell) => (
+            <View key={cell} style={styles.diagramCell}>
+              <Text variant="labelLarge" style={styles.diagramLabel}>
+                {cell}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -306,6 +340,35 @@ const styles = StyleSheet.create({
   link: {
     color: TITLE_PURPLE,
     textDecorationLine: "underline",
+  },
+  diagram: {
+    gap: 8,
+    backgroundColor: "#07051a",
+    borderColor: TITLE_PURPLE,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  diagramRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  diagramCell: {
+    flex: 1,
+    backgroundColor: "#1a1038",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  diagramLabel: {
+    color: "#00ffbd",
+    textAlign: "center",
+  },
+  shot: {
+    width: "100%",
+    height: 220,
+    resizeMode: "contain",
+    borderRadius: 8,
   },
   dots: {
     flexDirection: "row",

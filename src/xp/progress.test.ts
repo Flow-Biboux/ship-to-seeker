@@ -79,12 +79,12 @@ describe("summarizeProgress", () => {
       walletVerified: true,
     });
     assert.equal(summary.modulesDone, 2);
-    assert.equal(summary.modulesTotal, 7);
+    assert.equal(summary.modulesTotal, 14);
     assert.equal(summary.checksDone, 2);
     assert.equal(summary.checksTotal, 4);
     assert.equal(
       summary.meaning,
-      "2 of 7 modules finished. 2 of 4 checks verified.",
+      "2 of 14 modules finished. 2 of 4 checks verified.",
     );
   });
 });

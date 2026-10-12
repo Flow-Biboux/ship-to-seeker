@@ -109,10 +109,10 @@ describe("markModuleCompleted", () => {
 });
 
 describe("BUILD_MODULES", () => {
-  it("lists modules 00 through 06", () => {
+  it("lists modules 00 through 13", () => {
     assert.deepEqual(
       BUILD_MODULES.map((module) => module.id),
-      ["00", "01", "02", "03", "04", "05", "06"],
+      ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"],
     );
   });
 });
