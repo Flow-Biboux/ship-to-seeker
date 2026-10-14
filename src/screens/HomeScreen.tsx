@@ -16,7 +16,7 @@ export function HomeScreen() {
         style={{ fontWeight: "bold", marginBottom: 12 }}
         variant="displaySmall"
       >
-        Solana Mobile Expo Template
+        Ship to Seeker
       </Text>
       {selectedAccount ? (
         <AccountDetailFeature />

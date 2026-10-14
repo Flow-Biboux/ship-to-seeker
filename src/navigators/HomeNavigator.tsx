@@ -6,6 +6,7 @@ import { BuildPathScreen } from "../screens/BuildPathScreen";
 import { DiagnosticsScreen } from "../screens/DiagnosticsScreen";
 import { ExplainerScreen } from "../screens/ExplainerScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { BG, GREEN, PANEL } from "../theme";
 
 const Tab = createBottomTabNavigator();
 
@@ -36,6 +37,11 @@ export function HomeNavigator() {
       }}
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: PANEL,
+          borderTopColor: BG,
+        },
+        tabBarActiveTintColor: GREEN,
         tabBarIcon: ({ color, size }) => (
           <Feather
             name={TAB_ICONS[route.name as TabName]}
