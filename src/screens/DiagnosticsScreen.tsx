@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Linking, ScrollView, StyleSheet } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Chip, Text } from "react-native-paper";
 import { ScreenIntro } from "../components/ScreenIntro";
 import {
@@ -16,6 +16,8 @@ import {
   SignatureNeverLandedError,
 } from "../diagnostics/devnetTx";
 import { findSgtMint } from "../diagnostics/sgt";
+import { focusCheck, type CheckId } from "../diagnostics/focusCheck";
+import { CARD_RADIUS, GREEN, PANEL, SCREEN_PADDING } from "../theme";
 import { useConnection } from "../utils/ConnectionProvider";
 import { ellipsify } from "../utils/ellipsify";
 import { useAuthorization } from "../utils/useAuthorization";
@@ -24,7 +26,6 @@ import { useProgress } from "../xp/ProgressContext";
 
 type Status = "idle" | "checking" | "pass" | "fail" | "absent";
 
-const SCREEN_PADDING = 16;
 const CARD_GAP = 12;
 const CHIP_PASS = "#1B7F3A";
 const CHIP_FAIL = "#B42318";
@@ -202,126 +203,176 @@ export function DiagnosticsScreen() {
   }, [selectedAccount]);
 
   const walletLabel = selectedAccount ? ellipsify(selectedAccount.publicKey.toBase58(), 4) : null;
+  const [opened, setOpened] = useState<CheckId | null>(null);
+  const statuses: Record<CheckId, Status> = {
+    rpc,
+    wallet,
+    tx,
+    sgt,
+  };
+  const next = focusCheck(statuses);
+  const openId = opened ?? next ?? "rpc";
+
+  const cards: Record<CheckId, { title: string; body: React.ReactNode }> = {
+    rpc: {
+      title: "Devnet RPC",
+      body: (
+        <Card mode="outlined" style={styles.hero}>
+          <Card.Title title="Devnet RPC" subtitle="getHealth on api.devnet.solana.com" />
+          <Card.Content>
+            <StatusChip status={rpc} pass="Connected" fail="Unreachable" />
+            {rpc === "fail" ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                {RPC_UNREACHABLE_HINT}
+              </Text>
+            ) : null}
+          </Card.Content>
+          <Card.Actions>
+            <Button
+              mode="contained"
+              buttonColor={GREEN}
+              textColor="#030014"
+              onPress={() => setRpcAttempt((n) => n + 1)}
+              disabled={rpc === "checking"}
+              loading={rpc === "checking"}
+            >
+              Retry
+            </Button>
+          </Card.Actions>
+        </Card>
+      ),
+    },
+    wallet: {
+      title: "Wallet",
+      body: (
+        <Card mode="outlined" style={styles.hero}>
+          <Card.Title title="Wallet" subtitle="Mobile Wallet Adapter (Seed Vault on Seeker)" />
+          <Card.Content>
+            <StatusChip status={wallet} pass="Connected" fail="Not connected" />
+            {walletLabel ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                {walletLabel}
+              </Text>
+            ) : null}
+            {walletHint ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                {walletHint}
+              </Text>
+            ) : null}
+          </Card.Content>
+          <Card.Actions>
+            <Button
+              mode="contained"
+              buttonColor={GREEN}
+              textColor="#030014"
+              onPress={() => {
+                const action = selectedAccount ? disconnectWallet() : connectWallet();
+                action.catch((e: unknown) => console.warn("Wallet action failed", e));
+              }}
+              loading={wallet === "checking"}
+              disabled={wallet === "checking"}
+            >
+              {selectedAccount ? "Disconnect" : "Connect"}
+            </Button>
+          </Card.Actions>
+        </Card>
+      ),
+    },
+    tx: {
+      title: "Devnet transaction",
+      body: (
+        <Card mode="outlined" style={styles.hero}>
+          <Card.Title title="Devnet transaction" subtitle="Airdrop if needed, then 0.001 SOL to yourself" />
+          <Card.Content>
+            <StatusChip status={tx} pass="Confirmed" fail="Failed" />
+            {!selectedAccount ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                Connect a wallet first.
+              </Text>
+            ) : null}
+            {txHint ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                {txHint}
+              </Text>
+            ) : null}
+          </Card.Content>
+          <Card.Actions>
+            {txSignature ? (
+              <Button onPress={() => Linking.openURL(explorerTxUrl(txSignature))}>Explorer</Button>
+            ) : null}
+            {needsFaucet ? (
+              <Button onPress={() => Linking.openURL(DEVNET_FAUCET_URL)}>Faucet</Button>
+            ) : null}
+            <Button
+              mode="contained"
+              buttonColor={GREEN}
+              textColor="#030014"
+              onPress={() => {
+                runTx().catch((e: unknown) => console.warn("Transaction check failed", e));
+              }}
+              loading={tx === "checking"}
+              disabled={!selectedAccount || tx === "checking"}
+            >
+              Send
+            </Button>
+          </Card.Actions>
+        </Card>
+      ),
+    },
+    sgt: {
+      title: "Genesis Token",
+      body: (
+        <Card mode="outlined" style={styles.hero}>
+          <Card.Title title="Seeker Genesis Token" subtitle="Mainnet read for the connected wallet" />
+          <Card.Content>
+            <StatusChip status={sgt} pass="Verified" fail="Couldn't check" absent="Not on this wallet" />
+            {!selectedAccount ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                Connect a wallet first.
+              </Text>
+            ) : null}
+            {sgtHint ? (
+              <Text variant="bodyMedium" style={styles.hint}>
+                {sgtHint}
+              </Text>
+            ) : null}
+          </Card.Content>
+          <Card.Actions>
+            <Button
+              mode="contained"
+              buttonColor={GREEN}
+              textColor="#030014"
+              onPress={() => {
+                runSgt().catch((e: unknown) => console.warn("SGT check failed", e));
+              }}
+              loading={sgt === "checking"}
+              disabled={!selectedAccount || sgt === "checking"}
+            >
+              Check
+            </Button>
+          </Card.Actions>
+        </Card>
+      ),
+    },
+  };
+  const order: CheckId[] = ["rpc", "wallet", "tx", "sgt"];
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <ScreenIntro title="Diagnostics" subtitle="Check your Solana Mobile setup" />
-
-      <Card mode="outlined">
-        <Card.Title title="Devnet RPC" subtitle="getHealth on api.devnet.solana.com" />
-        <Card.Content>
-          <StatusChip status={rpc} pass="Connected" fail="Unreachable" />
-          {rpc === "fail" ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              {RPC_UNREACHABLE_HINT}
-            </Text>
-          ) : null}
-        </Card.Content>
-        <Card.Actions>
-          <Button
-            mode="contained-tonal"
-            onPress={() => setRpcAttempt((n) => n + 1)}
-            disabled={rpc === "checking"}
-            loading={rpc === "checking"}
-          >
-            Retry
-          </Button>
-        </Card.Actions>
-      </Card>
-
-      <Card mode="outlined">
-        <Card.Title title="Wallet" subtitle="Mobile Wallet Adapter (Seed Vault on Seeker)" />
-        <Card.Content>
-          <StatusChip status={wallet} pass="Connected" fail="Not connected" />
-          {walletLabel ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              {walletLabel}
-            </Text>
-          ) : null}
-          {walletHint ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              {walletHint}
-            </Text>
-          ) : null}
-        </Card.Content>
-        <Card.Actions>
-          <Button
-            mode="contained-tonal"
-            onPress={() => {
-              const action = selectedAccount ? disconnectWallet() : connectWallet();
-              action.catch((e: unknown) => console.warn("Wallet action failed", e));
-            }}
-            loading={wallet === "checking"}
-            disabled={wallet === "checking"}
-          >
-            {selectedAccount ? "Disconnect" : "Connect"}
-          </Button>
-        </Card.Actions>
-      </Card>
-
-      <Card mode="outlined">
-        <Card.Title title="Devnet transaction" subtitle="Airdrop if needed, then 0.001 SOL to yourself" />
-        <Card.Content>
-          <StatusChip status={tx} pass="Confirmed" fail="Failed" />
-          {!selectedAccount ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              Connect a wallet first.
-            </Text>
-          ) : null}
-          {txHint ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              {txHint}
-            </Text>
-          ) : null}
-        </Card.Content>
-        <Card.Actions>
-          {txSignature ? (
-            <Button onPress={() => Linking.openURL(explorerTxUrl(txSignature))}>Explorer</Button>
-          ) : null}
-          {needsFaucet ? (
-            <Button onPress={() => Linking.openURL(DEVNET_FAUCET_URL)}>Faucet</Button>
-          ) : null}
-          <Button
-            mode="contained-tonal"
-            onPress={() => {
-              runTx().catch((e: unknown) => console.warn("Transaction check failed", e));
-            }}
-            loading={tx === "checking"}
-            disabled={!selectedAccount || tx === "checking"}
-          >
-            Send
-          </Button>
-        </Card.Actions>
-      </Card>
-
-      <Card mode="outlined">
-        <Card.Title title="Seeker Genesis Token" subtitle="Mainnet read for the connected wallet" />
-        <Card.Content>
-          <StatusChip status={sgt} pass="Verified" fail="Couldn't check" absent="Not on this wallet" />
-          {!selectedAccount ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              Connect a wallet first.
-            </Text>
-          ) : null}
-          {sgtHint ? (
-            <Text variant="bodyMedium" style={styles.hint}>
-              {sgtHint}
-            </Text>
-          ) : null}
-        </Card.Content>
-        <Card.Actions>
-          <Button
-            mode="contained-tonal"
-            onPress={() => {
-              runSgt().catch((e: unknown) => console.warn("SGT check failed", e));
-            }}
-            loading={sgt === "checking"}
-            disabled={!selectedAccount || sgt === "checking"}
-          >
-            Check
-          </Button>
-        </Card.Actions>
-      </Card>
+      <ScreenIntro
+        title="Diagnostics"
+        subtitle={next == null ? "Every check is settled." : "The next check is the large card."}
+      />
+      {cards[openId].body}
+      <View style={styles.chips}>
+        {order
+          .filter((id) => id !== openId)
+          .map((id) => (
+            <Pressable key={id} onPress={() => setOpened(id)}>
+              <Chip compact>{cards[id].title}</Chip>
+            </Pressable>
+          ))}
+      </View>
     </ScrollView>
   );
 }
@@ -331,6 +382,15 @@ const styles = StyleSheet.create({
     padding: SCREEN_PADDING,
     paddingBottom: 32,
     gap: CARD_GAP,
+  },
+  hero: {
+    backgroundColor: PANEL,
+    borderRadius: CARD_RADIUS,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   chip: {
     alignSelf: "flex-start",

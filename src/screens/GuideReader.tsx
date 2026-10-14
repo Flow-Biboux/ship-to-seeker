@@ -20,6 +20,8 @@ import {
 } from "../buildPath/guidePanels";
 import { GUIDE_DIAGRAMS } from "../buildPath/extraGuides";
 import type { BuildModule } from "../buildPath/modules";
+import { isRecallCorrect, recallFor } from "../buildPath/recall";
+import { CARD_RADIUS, GREEN, MUTED, PANEL, PURPLE } from "../theme";
 
 export function GuideReader({
   module,
@@ -39,6 +41,9 @@ export function GuideReader({
   const scroller = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([0]));
+  const [picked, setPicked] = useState<string | null>(null);
+  const recall = recallFor(module.id);
+  const recallOk = isRecallCorrect(module.id, picked);
   const codeColor = CODE_FG;
   const codeBackground = CODE_BG;
   const codeBorder = CODE_BORDER;
@@ -103,7 +108,7 @@ export function GuideReader({
             <Text variant="titleLarge" style={{ color: TITLE_PURPLE }}>
               {panel.title}
             </Text>
-            {panel.blocks.map((block, blockIndex) => (
+            {orderedBlocks(panel.blocks).map((block, blockIndex) => (
               <GuideBlockView
                 key={`${panel.title}-${blockIndex}`}
                 block={block}
@@ -112,6 +117,16 @@ export function GuideReader({
                 borderColor={codeBorder}
               />
             ))}
+            {onLast && panel.title === panels[lastIndex]?.title && recall ? (
+              <Recall
+                prompt={recall.prompt}
+                choices={recall.choices}
+                picked={picked}
+                correct={recall.answer}
+                wrongHint={recall.wrongHint}
+                onPick={setPicked}
+              />
+            ) : null}
           </ScrollView>
         ))}
       </ScrollView>
@@ -149,7 +164,7 @@ export function GuideReader({
       ) : null}
       <Button
         mode="contained"
-        disabled={onLast && !alreadyDone && !doneAllowed}
+        disabled={onLast && !alreadyDone && (!doneAllowed || !recallOk)}
         onPress={() => {
           if (!onLast) {
             goTo(index + 1);
@@ -164,6 +179,68 @@ export function GuideReader({
       >
         {actionLabel}
       </Button>
+    </View>
+  );
+}
+
+const BLOCK_RANK: Record<GuideBlock["kind"], number> = {
+  diagram: 0,
+  text: 1,
+  code: 2,
+};
+
+function orderedBlocks(blocks: readonly GuideBlock[]): GuideBlock[] {
+  return blocks
+    .map((block, index) => ({ block, index }))
+    .sort(
+      (left, right) =>
+        BLOCK_RANK[left.block.kind] - BLOCK_RANK[right.block.kind] ||
+        left.index - right.index,
+    )
+    .map((entry) => entry.block);
+}
+
+function Recall({
+  prompt,
+  choices,
+  picked,
+  correct,
+  wrongHint,
+  onPick,
+}: {
+  prompt: string;
+  choices: readonly string[];
+  picked: string | null;
+  correct: string;
+  wrongHint: string;
+  onPick: (choice: string) => void;
+}) {
+  return (
+    <View style={styles.recall}>
+      <Text variant="titleMedium">{prompt}</Text>
+      {choices.map((choice) => {
+        const selected = picked === choice;
+        const right = selected && choice === correct;
+        const wrong = selected && choice !== correct;
+        return (
+          <Pressable
+            key={choice}
+            onPress={() => onPick(choice)}
+            style={[
+              styles.choice,
+              right ? styles.choiceRight : null,
+              wrong ? styles.choiceWrong : null,
+            ]}
+          >
+            <Text variant="bodyLarge">{choice}</Text>
+          </Pressable>
+        );
+      })}
+      {picked != null && picked !== correct ? (
+        <Text variant="bodyMedium" style={styles.wrongHint}>
+          {wrongHint}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -208,15 +285,11 @@ function GuideDiagram({ name }: { name: DiagramName }) {
           accessibilityLabel="Ship to Seeker screen"
         />
       ) : null}
-      {rows.map((row) => (
-        <View key={row.join("|")} style={styles.diagramRow}>
-          {row.map((cell) => (
-            <View key={cell} style={styles.diagramCell}>
-              <Text variant="labelLarge" style={styles.diagramLabel}>
-                {cell}
-              </Text>
-            </View>
-          ))}
+      {rows.flat().map((cell, cellIndex) => (
+        <View key={`${cell}-${cellIndex}`} style={styles.diagramCell}>
+          <Text variant="labelLarge" style={styles.diagramLabel}>
+            {cell}
+          </Text>
         </View>
       ))}
     </View>
@@ -346,18 +419,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#07051a",
     borderColor: TITLE_PURPLE,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: CARD_RADIUS,
     padding: 12,
   },
-  diagramRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
   diagramCell: {
-    flex: 1,
-    backgroundColor: "#1a1038",
+    backgroundColor: PANEL,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 8,
   },
   diagramLabel: {
@@ -378,5 +446,25 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  recall: {
+    gap: 8,
+    marginTop: 8,
+  },
+  choice: {
+    backgroundColor: PANEL,
+    borderRadius: CARD_RADIUS,
+    borderWidth: 1,
+    borderColor: PURPLE,
+    padding: 12,
+  },
+  choiceRight: {
+    borderColor: GREEN,
+  },
+  choiceWrong: {
+    borderColor: "#ff5c7a",
+  },
+  wrongHint: {
+    color: MUTED,
   },
 });
